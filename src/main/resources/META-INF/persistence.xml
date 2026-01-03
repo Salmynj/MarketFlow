@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence" version="3.0">
+  <persistence-unit name="MarketFlowPU" transaction-type="RESOURCE_LOCAL">
+    <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+    <class>modelo.Publicacion</class>
+    <class>modelo.Mensaje</class>
+    <properties>
+
+      <!-- MySQL configuration (activated). Edit user/password/host/db según tu entorno -->
+      <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://127.0.0.1:3306/marketflow_db?createDatabaseIfNotExist=true&amp;useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=UTC&amp;connectTimeout=10000"/>
+      <property name="jakarta.persistence.jdbc.user" value="root"/>
+      <property name="jakarta.persistence.jdbc.password" value="marketflow"/>
+      <property name="eclipselink.target-database" value="MySQL"/>
+      <property name="eclipselink.logging.level" value="FINE"/>
+
+      <!-- Create or extend tables automatically (convenient for development) -->
+      <property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>
+      <property name="eclipselink.ddl-generation.output-mode" value="database"/>
+
+      <!-- Disable weaving in Tomcat environments -->
+      <property name="eclipselink.weaving" value="false"/>
+      <property name="eclipselink.logging.parameters" value="true"/>
+
+      <!--
+        Si prefieres usar la base H2 embebida (desarrollo sin MySQL), descomenta el bloque H2 siguiente y comenta/ajusta las propiedades MySQL anteriores.
+
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:file:./data/marketflow;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=FALSE"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value=""/>
+      <property name="eclipselink.target-database" value="H2"/>
+      -->
+
+    </properties>
+  </persistence-unit>
+</persistence>
