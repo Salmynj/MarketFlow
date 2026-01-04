@@ -4,12 +4,13 @@ import java.util.List;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import modelo.ConexionBDD;
 import modelo.Publicacion;
 
 public class PublicacionDAO {
 
     public Publicacion guardarPublicacion(Publicacion p) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = ConexionBDD.getEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(p);
@@ -24,7 +25,7 @@ public class PublicacionDAO {
     }
 
     public Publicacion actualizar(Publicacion p) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = ConexionBDD.getEntityManager();
         try {
             em.getTransaction().begin();
             Publicacion merged = em.merge(p);
@@ -39,7 +40,7 @@ public class PublicacionDAO {
     }
 
     public void eliminar(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = ConexionBDD.getEntityManager();
         try {
             em.getTransaction().begin();
             Publicacion p = em.find(Publicacion.class, id);
@@ -54,7 +55,7 @@ public class PublicacionDAO {
     }
 
     public Publicacion buscarPorId(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = ConexionBDD.getEntityManager();
         try {
             return em.find(Publicacion.class, id);
         } finally {
@@ -63,7 +64,7 @@ public class PublicacionDAO {
     }
 
     public List<Publicacion> obtenerPublicaciones() {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = ConexionBDD.getEntityManager();
         try {
             TypedQuery<Publicacion> q = em.createQuery("SELECT p FROM Publicacion p", Publicacion.class);
             return q.getResultList();
@@ -73,7 +74,7 @@ public class PublicacionDAO {
     }
 
     public List<Publicacion> obtenerMisPublicaciones(String usuario) {
-        EntityManager em = JPAUtil.getEntityManager();
+        EntityManager em = ConexionBDD.getEntityManager();
         try {
             TypedQuery<Publicacion> q = em.createQuery("SELECT p FROM Publicacion p WHERE p.usuario = :u", Publicacion.class);
             q.setParameter("u", usuario);

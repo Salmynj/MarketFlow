@@ -13,7 +13,7 @@ public class ConexionBDD {
     // Use lazy initialization to avoid ExceptionInInitializerError on class loading
     private static volatile EntityManagerFactory emf;
 
-    private static EntityManagerFactory createEntityManagerFactory() {
+    private static EntityManagerFactory crearEntityManagerFactory() {
         try {
             return Persistence.createEntityManagerFactory("MarketFlowPU");
         } catch (Throwable ex) {
@@ -29,7 +29,7 @@ public class ConexionBDD {
         if (emf == null) {
             synchronized (ConexionBDD.class) {
                 if (emf == null) {
-                    emf = createEntityManagerFactory();
+                    emf = crearEntityManagerFactory();
                 }
             }
         }
@@ -40,7 +40,7 @@ public class ConexionBDD {
         return getEmf().createEntityManager();
     }
 
-    public static void close() {
+    public static void cerrar() {
         if (emf != null && emf.isOpen()) emf.close();
     }
 
@@ -50,7 +50,7 @@ public class ConexionBDD {
      *
      * @return true si la consulta se ejecutó correctamente y devolvió resultado; false en caso de error.
      */
-    public static boolean isConnected() {
+    public static boolean estaConectado() {
         EntityManager em = null;
         try {
             // Si el EntityManagerFactory falla en crearse, esto lanzará y caerá al catch

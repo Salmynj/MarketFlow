@@ -34,7 +34,7 @@ public class ChatController extends HttpServlet {
         req.setAttribute("conversacion", conversacion);
         req.setAttribute("usuario", usuario);
         req.setAttribute("otro", otro);
-        req.getRequestDispatcher("/vista/Chat.jsp").forward(req, resp);
+        req.getRequestDispatcher("/vista/PanelChat.jsp").forward(req, resp);
     }
 
     @Override
