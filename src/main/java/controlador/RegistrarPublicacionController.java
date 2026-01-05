@@ -82,7 +82,11 @@ public class RegistrarPublicacionController extends HttpServlet {
             if (usuario != null && !usuario.isBlank()) {
                 req.getSession().setAttribute("usuario", usuario);
             }
-            resp.sendRedirect(req.getContextPath() + "/misPublicaciones?usuario=" + java.net.URLEncoder.encode(usuario, "UTF-8"));
+            // En lugar de redirigir directamente, forward al JSP de mensaje emergente con atributos
+            String redirectUrl = req.getContextPath() + "/misPublicaciones?usuario=" + java.net.URLEncoder.encode(usuario, "UTF-8");
+            req.setAttribute("msg", "Publicación creada exitosamente");
+            req.setAttribute("redirectUrl", redirectUrl);
+            req.getRequestDispatcher("/vista/PanelMensajeEmergente.jsp").forward(req, resp);
         } else {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "No se pudo guardar la publicación");
         }
