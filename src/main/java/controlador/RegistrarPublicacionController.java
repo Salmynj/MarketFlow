@@ -1,95 +1,153 @@
 package controlador;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.UUID;
 
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
+import modelo.DAOs.PublicacionDAO;
+import modelo.entidad.Estado;
+import modelo.entidad.Publicacion;
 
-import modelo.Categoria;
-import modelo.Estado;
-import modelo.Publicacion;
-import modelo.dao.PublicacionDAO;
-
-@WebServlet("/crearPublicacion")
+@WebServlet("/RegistrarPublicacionController")
+@MultipartConfig(fileSizeThreshold = 1024 * 1024, maxFileSize = 5 * 1024 * 1024, maxRequestSize = 10 * 1024 * 1024)
 public class RegistrarPublicacionController extends HttpServlet {
+	
+	
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		this.ruteador(req, resp);
+	}
 
-    private static final long serialVersionUID = 1L;
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		this.ruteador(req, resp);
+	}
 
-    private PublicacionDAO dao = new PublicacionDAO();
+	private void ruteador(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String ruta = (req.getParameter("ruta") == null) ? "guardar" : req.getParameter("ruta");
 
-    public boolean guardarNuevaPublicacion(String titulo, Categoria categoria, String nombreDelProducto, double precio, Estado estado,
-            String descripcion, String imagen, String usuario) {
-        Publicacion p = new Publicacion(titulo, categoria, nombreDelProducto, precio, estado, descripcion, imagen, usuario);
-        try {
-            dao.guardarPublicacion(p);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
+		switch (ruta) {
+		case "guardar":
+			this.guardarNuevaPublicacion(req, resp);
+			break;
+		case "crear":
+			this.crearPublicacion(req, resp);
+			break;
+	}
+	}
+	public void guardarNuevaPublicacion(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		req.setCharacterEncoding("UTF-8");
 
-    // ahora recibe request/response y realiza forward al JSP de registro
-    public void crearPublicacion(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        req.getRequestDispatcher("/vista/PanelRegistrarPublicacion.jsp").forward(req, resp);
-    }
+		// Obtener parámetros del formulario
+		String titulo = req.getParameter("titulo");
+		String categoria = req.getParameter("categoria");
+		String nombreProducto = req.getParameter("NombreDelProducto");
+		String precioStr = req.getParameter("precio");
+		double precio = 0.0;
+		try {
+			if (precioStr != null && !precioStr.isEmpty()) {
+				precio = Double.parseDouble(precioStr);
+			}
+		} catch (NumberFormatException e) {
+			precio = 0.0;
+		}
+		String estadoParam = req.getParameter("estado");
+		Estado estado = Estado.NUEVO;
+		if (estadoParam != null) {
+			try {
+				estado = Estado.valueOf(estadoParam);
+			} catch (IllegalArgumentException ex) {
+				estado = Estado.NUEVO;
+			}
+		}
+		String descripcion = req.getParameter("descripcion");
+		String usuario = req.getParameter("usuario");
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // Invocar el método que muestra el panel de registro
-        crearPublicacion(req, resp);
-    }
+		// Manejo de imagen (multipart y opción URL)
+		String imagenPath = "";
+		try {
+			// Primero revisar si el formulario incluyó campo imagenUrl (cuando se selecciona usar URL)
+			String imagenUrl = req.getParameter("imagenUrl");
+			if (imagenUrl != null && !imagenUrl.trim().isEmpty()) {
+				imagenPath = imagenUrl.trim();
+			} else {
+				Part part = req.getPart("imagen");
+				if (part != null && part.getSize() > 0) {
+					String submittedFileName = Paths.get(part.getSubmittedFileName()).getFileName().toString();
+					// Generar nombre único para evitar colisiones
+					String ext = "";
+					int dot = submittedFileName.lastIndexOf('.');
+					if (dot >= 0) ext = submittedFileName.substring(dot);
+					String uniqueName = UUID.randomUUID().toString() + ext;
+					String imagesDir = getServletContext().getRealPath("/assets/img");
+					File dir = new File(imagesDir);
+					if (!dir.exists()) {
+						dir.mkdirs();
+					}
+					String destination = imagesDir + File.separator + uniqueName;
+					part.write(destination);
+					// Guardar la URL pública completa para que pueda usarse en <img src="..."> desde la vista
+					imagenPath = req.getContextPath() + "/assets/img/" + uniqueName;
+				}
+			}
+		} catch (Exception ex) {
+			// si no es multipart o ocurre error, intentar obtener imagen como parámetro simple
+			String imgParam = req.getParameter("imagen");
+			if (imgParam != null) {
+				// si viene una ruta relativa, normalizar a URL pública
+				if (!imgParam.startsWith("http://") && !imgParam.startsWith("https://") && !imgParam.startsWith(req.getContextPath())) {
+					imagenPath = req.getContextPath() + (imgParam.startsWith("/") ? "" : "/") + imgParam;
+				} else {
+					imagenPath = imgParam;
+				}
+			}
+		}
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String titulo = req.getParameter("titulo");
-        String categoriaS = req.getParameter("categoria");
-        String nombre = req.getParameter("nombreDelProducto");
-        String precioS = req.getParameter("precio");
-        String estadoS = req.getParameter("estado");
-        String descripcion = req.getParameter("descripcion");
-        String imagen = req.getParameter("imagen");
-        String usuario = req.getParameter("usuario");
+		// Crear la entidad Publicacion (id=0 para nueva publicación)
+		Publicacion publicacion = new Publicacion(
+				titulo,
+				(categoria != null) ? categoria : "",
+				(nombreProducto != null) ? nombreProducto : "",
+				precio,
+				estado,
+				descripcion,
+				imagenPath,
+				(usuario != null) ? usuario : "",
+				0
+		);
 
-        if (titulo == null || titulo.isBlank() || nombre == null || nombre.isBlank() || usuario == null || usuario.isBlank()) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Faltan datos requeridos");
-            return;
-        }
+		// Log detallado para depuración
+		System.out.println(">>>> INFO:RegistrarPublicacionController: guardarPublicacion datos: titulo='" + titulo + "', categoria='" + categoria + "', nombre='" + nombreProducto + "', precio='" + precio + "', estado='" + estado + "', usuario='" + usuario + "', imagen='" + imagenPath + "'");
 
-        double precio = 0.0;
-        try {
-            if (precioS != null && !precioS.isBlank()) precio = Double.parseDouble(precioS);
-        } catch (NumberFormatException ex) {
-            precio = 0.0;
-        }
+		// Guardar mediante DAO
+		PublicacionDAO dao = new PublicacionDAO();
+		boolean ok = dao.guardarPublicacion(publicacion);
 
-        Categoria categoria = null;
-        Estado estado = null;
-        try {
-            if (categoriaS != null) categoria = Categoria.valueOf(categoriaS);
-            if (estadoS != null) estado = Estado.valueOf(estadoS);
-        } catch (IllegalArgumentException ex) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Categoria o estado inválido");
-            return;
-        }
-
-        boolean ok = guardarNuevaPublicacion(titulo, categoria, nombre, precio, estado, descripcion, imagen, usuario);
-        if (ok) {
-            // Guardar el usuario en sesión para que /misPublicaciones lo lea automáticamente
-            if (usuario != null && !usuario.isBlank()) {
-                req.getSession().setAttribute("usuario", usuario);
-            }
-            // En lugar de redirigir directamente, forward al JSP de mensaje emergente con atributos
-            String redirectUrl = req.getContextPath() + "/misPublicaciones?usuario=" + java.net.URLEncoder.encode(usuario, "UTF-8");
-            req.setAttribute("msg", "Publicación creada exitosamente");
-            req.setAttribute("redirectUrl", redirectUrl);
-            req.getRequestDispatcher("/vista/PanelMensajeEmergente.jsp").forward(req, resp);
-        } else {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "No se pudo guardar la publicación");
-        }
-    }
+		if (ok) {
+			// Redirigir al catálogo para ver la nueva publicación (usar ruta=cargar que maneja VisualizarCatalogoController)
+			System.out.println(">>>> INFO:RegistrarPublicacionController: publicación guardada, redirigiendo a catálogo");
+			resp.sendRedirect(req.getContextPath() + "/VisualizarCatalogoController?ruta=cargar");
+		} else {
+			// En caso de error, reenviar al formulario con un mensaje
+			req.setAttribute("error", "No se pudo guardar la publicación");
+			RequestDispatcher rd = req.getRequestDispatcher("/vista/PanelRegistrarPublicacion.jsp");
+			rd.forward(req, resp);
+		}
+		
+	}
+	public void crearPublicacion(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		// Reenviar a la vista PanelCatalogo.jsp para obtener el formulario de creación
+		RequestDispatcher rd = req.getRequestDispatcher("/vista/PanelRegistrarPublicacion.jsp");
+		rd.forward(req, resp);
+	}
 
 }
