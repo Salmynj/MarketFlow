@@ -75,9 +75,9 @@ private String escapeHtml(String s) {
     <div class="contenedor-principal">
         <aside>
             <ul class="flexColumnaAside listaSinEstilo">
-                <li><a href="catalog.html"><i class="fa-solid fa-store"></i> Catálogo</a></li>
-                <li class="activo"><a href="my-products.html"><i class="fa-solid fa-box-open"></i> Mis Publicaciones</a></li>
-                <li><a href="chat.html"><i class="fa-solid fa-comments"></i> Mensajes</a></li>
+                <li><a href="VisualizarCatalogoController?ruta=cargar"><i class="fa-solid fa-store"></i> Catálogo</a></li>
+                <li class="activo"><a href="GestionarPublicacionesController?ruta=listar"><i class="fa-solid fa-box-open"></i> Mis Publicaciones</a></li>
+                <li><a href="ContactarVendedorController?ruta=contactar"><i class="fa-solid fa-comments"></i> Mensajes</a></li>
             </ul>
         </aside>
 

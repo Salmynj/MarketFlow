@@ -9,7 +9,7 @@
     <persistence-unit name="persistencia" transaction-type="RESOURCE_LOCAL">
 
         <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
-
+    
         <!-- 👇 ESTO ES LA CLAVE -->
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
 

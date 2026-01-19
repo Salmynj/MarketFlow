@@ -97,7 +97,7 @@
         out.write("        </div>\n");
 
         out.write("        <div class=\"form-footer\">\n");
-        out.write("            <a href=\"my-products.html\" class=\"btn btn-gris\">Cancelar</a>\n");
+        out.write("            <a href=\"GestionarPublicacionesController?ruta=listar\" class=\"btn btn-gris\">Cancelar</a>\n");
         out.write("            <button type=\"submit\" class=\"btn btn-secondary\"><i class=\"fa-solid fa-check\"></i> Publicar Ahora</button>\n");
         out.write("        </div>\n");
 
@@ -142,10 +142,10 @@
     <div class="contenedor-principal">
         <aside>
             <ul class="flexColumnaAside listaSinEstilo">
-                <li><a href="catalog.html"><i class="fa-solid fa-store"></i> Catálogo</a></li>
-                <li><a href="my-products.html"><i class="fa-solid fa-box-open"></i> Mis Publicaciones</a>
+                <li><a href="VisualizarCatalogoController?ruta=cargar"><i class="fa-solid fa-store"></i> Catálogo</a></li>
+                <li><a href="GestionarPublicacionesController?ruta=listar"><i class="fa-solid fa-box-open"></i> Mis Publicaciones</a>
                 </li>
-                <li><a href="chat.html"><i class="fa-solid fa-comments"></i> Mensajes</a></li>
+                <li><a href="ContactarVendedorController?ruta=contactar"><i class="fa-solid fa-comments"></i> Mensajes</a></li>
             </ul>
         </aside>
 
