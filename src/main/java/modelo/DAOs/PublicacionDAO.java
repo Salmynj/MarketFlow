@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Persistence;
 import jakarta.persistence.TypedQuery;
 import modelo.entidad.Publicacion;
+import modelo.entidad.Estado;
 
 public class PublicacionDAO {
 
@@ -69,5 +70,24 @@ public class PublicacionDAO {
             if (this.em.getTransaction().isActive()) this.em.getTransaction().rollback();
             return false;
         }
+    }
+
+    // Obtener publicaciones aplicando filtros opcionales: estado, categoría, rango de precio y búsqueda (q)
+    public List<Publicacion> obtenerPublicacionesFiltradas(Estado estado, String categoria, Double precioMin, Double precioMax, String q) {
+        StringBuilder jpql = new StringBuilder("SELECT p FROM Publicacion p WHERE 1=1");
+        if (estado != null) jpql.append(" AND p.estado = :estado");
+        if (categoria != null && !categoria.trim().isEmpty()) jpql.append(" AND p.categoria = :categoria");
+        if (precioMin != null) jpql.append(" AND p.precio >= :precioMin");
+        if (precioMax != null) jpql.append(" AND p.precio <= :precioMax");
+        if (q != null && !q.trim().isEmpty()) jpql.append(" AND (LOWER(p.titulo) LIKE :q OR LOWER(p.nombreDelProducto) LIKE :q OR LOWER(p.descripcion) LIKE :q)");
+
+        TypedQuery<Publicacion> query = this.em.createQuery(jpql.toString(), Publicacion.class);
+        if (estado != null) query.setParameter("estado", estado);
+        if (categoria != null && !categoria.trim().isEmpty()) query.setParameter("categoria", categoria);
+        if (precioMin != null) query.setParameter("precioMin", precioMin);
+        if (precioMax != null) query.setParameter("precioMax", precioMax);
+        if (q != null && !q.trim().isEmpty()) query.setParameter("q", "%" + q.toLowerCase() + "%");
+
+        return query.getResultList();
     }
 }

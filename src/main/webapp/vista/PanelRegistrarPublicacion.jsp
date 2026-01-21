@@ -14,8 +14,8 @@
     }
 
     // Función que dibuja el formulario de publicación. Si pub es null, usa valores vacíos.
-    // Ahora recibe el contextPath para construir URLs públicas desde la vista
-    public void desplegarFormulario(Publicacion pub, JspWriter out, String contextPath) throws java.io.IOException {
+    // Ahora recibe el contextPath para construir URLs públicas desde la vista y un modo (registrar|editar)
+    public void desplegarFormulario(Publicacion pub, JspWriter out, String contextPath, String modo) throws java.io.IOException {
         String titulo = (pub != null && pub.getTitulo() != null) ? escapeHtml(pub.getTitulo()) : "";
         String categoria = (pub != null && pub.getCategoria() != null) ? escapeHtml(pub.getCategoria()) : "";
         String nombreProducto = (pub != null && pub.getNombreDelProducto() != null) ? escapeHtml(pub.getNombreDelProducto()) : "";
@@ -25,14 +25,30 @@
         String imagen = (pub != null && pub.getImagen() != null) ? escapeHtml(pub.getImagen()) : "";
         String usuario = (pub != null && pub.getUsuario() != null) ? escapeHtml(pub.getUsuario()) : "";
 
+        // Determinar modo efectivo: usar el parámetro modo si está presente; si no, inferir a partir del id
+        String modoEfectivo = (modo != null && !modo.trim().isEmpty()) ? modo : ((pub != null && pub.getId() > 0) ? "editar" : "registrar");
+        String actionUrl = contextPath + ("editar".equalsIgnoreCase(modoEfectivo) ? "/EditarPublicacionController" : "/RegistrarPublicacionController");
+        String rutaValue = "editar".equalsIgnoreCase(modoEfectivo) ? "actualizar" : "guardar";
+
+        String submitText = "editar".equalsIgnoreCase(modoEfectivo) ? "Guardar Cambios" : "Publicar Ahora";
+
         out.write("<div class=\"form-container-largo\">\n");
-        out.write("    <form method=\"post\" action=\"" + contextPath + "/RegistrarPublicacionController\" enctype=\"multipart/form-data\">\n");
-        out.write("        <input type=\"hidden\" name=\"ruta\" value=\"guardar\">\n");
+        out.write("    <form method=\"post\" action=\"" + actionUrl + "\" enctype=\"multipart/form-data\">\n");
+        out.write("        <input type=\"hidden\" name=\"ruta\" value=\"" + rutaValue + "\">\n");
+        // Si estamos en modo editar, incluir id oculto para identificar la publicación
+        if ("editar".equalsIgnoreCase(modoEfectivo) && pub != null) {
+            out.write("        <input type=\"hidden\" name=\"id\" value=\"" + pub.getId() + "\">\n");
+        }
         out.write("        <div class=\"form-flex-row\">\n");
         out.write("            <div class=\"form-col\">\n");
         out.write("                <div class=\"form-group\">\n");
         out.write("                    <label>Título del Producto</label>\n");
         out.write("                    <input type=\"text\" name=\"titulo\" value=\"" + titulo + "\" placeholder=\"Ej: Bicicleta de montaña...\">\n");
+        out.write("                </div>\n");
+        // Nombre del producto (campo adicional solicitado)
+        out.write("                <div class=\"form-group\">\n");
+        out.write("                    <label>Nombre del Producto</label>\n");
+        out.write("                    <input type=\"text\" name=\"nombreDelProducto\" value=\"" + nombreProducto + "\" placeholder=\"Ej: MountainBike X100\">\n");
         out.write("                </div>\n");
         out.write("                <div class=\"form-group\">\n");
         out.write("                    <label>Precio ($)</label>\n");
@@ -98,7 +114,7 @@
 
         out.write("        <div class=\"form-footer\">\n");
         out.write("            <a href=\"GestionarPublicacionesController?ruta=listar\" class=\"btn btn-gris\">Cancelar</a>\n");
-        out.write("            <button type=\"submit\" class=\"btn btn-secondary\"><i class=\"fa-solid fa-check\"></i> Publicar Ahora</button>\n");
+        out.write("            <button type=\"submit\" class=\"btn btn-secondary\"><i class=\"fa-solid fa-check\"></i> " + submitText + "</button>\n");
         out.write("        </div>\n");
 
         out.write("    </form>\n");
@@ -153,7 +169,7 @@
             <h1 class="titulo-pagina">Publicar Nuevo Producto</h1>
 
             <%-- reemplazo del formulario estático por la función --%>
-            <% desplegarFormulario((Publicacion) request.getAttribute("publicacion"), out, request.getContextPath()); %>
+            <% desplegarFormulario((Publicacion) request.getAttribute("publicacion"), out, request.getContextPath(), request.getParameter("modo")); %>
         </div>
     </div>
 

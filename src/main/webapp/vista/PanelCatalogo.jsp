@@ -30,7 +30,7 @@ public void desplegarPublicaciones(List<Publicacion> publicaciones, JspWriter ou
         if ("VENDIDO".equals(estado)) {
             out.write("    <button class=\"btn-accion btn-gris btn-block\" disabled>Vendido</button>\n");
         } else {
-            out.write("    <a href=\"product-detail.html?id=" + pub.getId() + "\" class=\"btn-accion btn-azul btn-block\">Ver Producto</a>\n");
+            out.write("    <a href=\"VerDetallesPublicacionController?id=" + pub.getId() + "\" class=\"btn-accion btn-azul btn-block\">Ver Producto</a>\n");
         }
         out.write("  </div>\n");
         out.write("</div>\n");
@@ -63,7 +63,12 @@ private String escapeHtml(String s) {
             <h2>MarketFlow</h2>
         </div>
         <div class="cajaBarraBusqueda">
-            <input type="text" placeholder="🔍 Buscar productos, marcas...">
+            <form id="buscarForm" action="<%= request.getContextPath() %>/FiltrarPublicacionController" method="get">
+                <input type="hidden" name="ruta" value="detallesPublicacion">
+                <input id="qInput" type="text" name="q" value="<%= request.getAttribute("q") != null ? request.getAttribute("q") : "" %>" placeholder="🔍 Buscar productos, marcas..." aria-label="Buscar">
+                <button type="submit" class="btn-buscar">Buscar</button>
+                <button type="button" id="clearBtn" class="btn-buscar" onclick="clearFilters()">Limpiar filtros</button>
+            </form>
         </div>
         
         <div class="cajaLoginRegistro">
@@ -87,35 +92,38 @@ private String escapeHtml(String s) {
            <div class="filtros-container">
     
     <div class="caja-filtro">
-        <select class="select-boton estilo-azul">
-            <option selected disabled>Categoría</option>
-            <option>Electrónica</option>
-            <option>Hogar</option>
-            <option>Deportes</option>
+        <select name="categoria" form="buscarForm" class="select-boton estilo-azul">
+            <option value="" <%= (request.getAttribute("categoria") == null || "".equals(request.getAttribute("categoria"))) ? "selected" : "" %>>Todas las categorías</option>
+            <option value="Electrónica" <%= "Electrónica".equals(request.getAttribute("categoria")) ? "selected" : "" %>>Electrónica</option>
+            <option value="Hogar" <%= "Hogar".equals(request.getAttribute("categoria")) ? "selected" : "" %>>Hogar</option>
+            <option value="Deportes" <%= "Deportes".equals(request.getAttribute("categoria")) ? "selected" : "" %>>Deportes</option>
+            <option value="Belleza" <%= "Belleza".equals(request.getAttribute("categoria")) ? "selected" : "" %>>Belleza</option>
+            <option value="Otros" <%= "Otros".equals(request.getAttribute("categoria")) ? "selected" : "" %>>Otros</option>
         </select>
         <i class="fa-solid fa-chevron-down icono-flecha texto-blanco"></i>
     </div>
 
     <div class="caja-filtro">
-        <select class="select-boton">
-            <option selected disabled>Rango de Precio</option>
-            <option>$0 - $50</option>
-            <option>$50 - $100</option>
-            <option>+$100</option>
+        <select name="precioRange" form="buscarForm" class="select-boton">
+            <option value="" <%= (request.getAttribute("precioRange") == null || "".equals(request.getAttribute("precioRange"))) ? "selected" : "" %>>Todos los precios</option>
+            <option value="0-50" <%= "0-50".equals(request.getAttribute("precioRange")) ? "selected" : "" %>>$0 - $50</option>
+            <option value="50-100" <%= "50-100".equals(request.getAttribute("precioRange")) ? "selected" : "" %>>$50 - $100</option>
+            <option value="100+" <%= "100+".equals(request.getAttribute("precioRange")) ? "selected" : "" %>>+$100</option>
         </select>
         <i class="fa-solid fa-chevron-down icono-flecha"></i>
     </div>
 
     <div class="caja-filtro">
-        <select class="select-boton">
-            <option selected disabled>Estado</option>
-            <option>Nuevo</option>
-            <option>Usado</option>
+        <select name="estado" form="buscarForm" class="select-boton">
+            <option value="" <%= (request.getAttribute("estado") == null || "".equals(request.getAttribute("estado"))) ? "selected" : "" %>>Cualquier estado</option>
+            <option value="NUEVO" <%= "NUEVO".equals(request.getAttribute("estado")) ? "selected" : "" %>>Nuevo</option>
+            <option value="USADO" <%= "USADO".equals(request.getAttribute("estado")) ? "selected" : "" %>>Usado</option>
+            <option value="VENDIDO" <%= "VENDIDO".equals(request.getAttribute("estado")) ? "selected" : "" %>>Vendido</option>
         </select>
         <i class="fa-solid fa-chevron-down icono-flecha"></i>
     </div>
 
-    <button class="btn btn-secondary btn-pill ml-auto">Aplicar Filtros</button>
+    <button type="submit" form="buscarForm" class="btn btn-secondary btn-pill ml-auto">Aplicar Filtros</button>
 
     </div>
 
@@ -127,5 +135,32 @@ private String escapeHtml(String s) {
             </div>
         </div>
     </div>
+
+    <script>
+        // Permitir enviar formulario con Enter en el campo de búsqueda
+        document.addEventListener('DOMContentLoaded', function() {
+            var qInput = document.getElementById('qInput');
+            if (qInput) {
+                qInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        document.getElementById('buscarForm').submit();
+                    }
+                });
+            }
+        });
+
+        // Limpiar filtros y recargar catálogo
+        function clearFilters() {
+            var form = document.getElementById('buscarForm');
+            if (!form) return;
+            // limpiar campos
+            form.q.value = '';
+            if (form.categoria) form.categoria.value = '';
+            if (form.estado) form.estado.value = '';
+            if (form.precioRange) form.precioRange.value = '';
+            form.submit();
+        }
+    </script>
 </body>
 </html>

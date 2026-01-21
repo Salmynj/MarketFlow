@@ -3,23 +3,31 @@ package controlador;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
+
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
+import modelo.DAOs.MensajeDAO;
 import modelo.DAOs.PublicacionDAO;
 import modelo.entidad.Estado;
+import modelo.entidad.Mensaje;
 import modelo.entidad.Publicacion;
 
-@WebServlet("/RegistrarPublicacionController")
-@MultipartConfig(fileSizeThreshold = 1024 * 1024, maxFileSize = 5 * 1024 * 1024, maxRequestSize = 10 * 1024 * 1024)
-public class RegistrarPublicacionController extends HttpServlet {
-	
+import jakarta.servlet.annotation.MultipartConfig;
+
+@MultipartConfig
+@WebServlet("/EditarPublicacionController")
+public class EditarPublicacionController extends HttpServlet {
+
+	private MensajeDAO mensajeDAO = new MensajeDAO();
 	
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -32,24 +40,23 @@ public class RegistrarPublicacionController extends HttpServlet {
 	}
 
 	private void ruteador(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		String ruta = (req.getParameter("ruta") == null) ? "guardar" : req.getParameter("ruta");
+		String ruta = (req.getParameter("ruta") == null) ? "editar" : req.getParameter("ruta");
 
 		switch (ruta) {
-		case "guardar":
-			this.guardarNuevaPublicacion(req, resp);
+		case "editar":
+			this.editarPublicacion(req, resp);
 			break;
-		case "crear":
-			this.crearPublicacion(req, resp);
+		case "actualizar":
+			this.actualizarPublicacion(req, resp);
 			break;
 	}
 	}
-	public void guardarNuevaPublicacion(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void actualizarPublicacion(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		req.setCharacterEncoding("UTF-8");
 
 		// Obtener parámetros del formulario
 		String titulo = req.getParameter("titulo");
 		String categoria = req.getParameter("categoria");
-		// nombreDelProducto (coincide con el name del input en la vista)
 		String nombreProducto = req.getParameter("nombreDelProducto");
 		String precioStr = req.getParameter("precio");
 		double precio = 0.0;
@@ -113,46 +120,71 @@ public class RegistrarPublicacionController extends HttpServlet {
 		}
 
 		// Crear la entidad Publicacion (id=0 para nueva publicación)
-		Publicacion publicacion = new Publicacion(
-				titulo,
-				(categoria != null) ? categoria : "",
-				(nombreProducto != null) ? nombreProducto : "",
-				precio,
-				estado,
-				descripcion,
-				imagenPath,
-				(usuario != null) ? usuario : "",
-				0
-		);
+		
 
 		// Log detallado para depuración
 		System.out.println(">>>> INFO:RegistrarPublicacionController: guardarPublicacion datos: titulo='" + titulo + "', categoria='" + categoria + "', nombre='" + nombreProducto + "', precio='" + precio + "', estado='" + estado + "', usuario='" + usuario + "', imagen='" + imagenPath + "'");
 
 		// Guardar mediante DAO
 		PublicacionDAO dao = new PublicacionDAO();
-		boolean ok = dao.guardarPublicacion(publicacion);
+		String idParam = req.getParameter("id");
+		if (idParam == null) {
+		    req.setAttribute("error", "ID de publicación no recibido");
+		    req.getRequestDispatcher("/vista/PanelRegistrarPublicacion.jsp").forward(req, resp);
+		    return;
+		}
 
+		int id = Integer.parseInt(idParam);
+
+		Publicacion publicacion = dao.buscarPorId(id);
+
+		if (publicacion == null) {
+		    req.setAttribute("error", "La publicación no existe");
+		    req.getRequestDispatcher("/vista/PanelRegistrarPublicacion.jsp").forward(req, resp);
+		    return;
+		}
+
+		// 🔥 APLICAR CAMBIOS
+		publicacion.setTitulo(titulo);
+		publicacion.setCategoria(categoria);
+		publicacion.setNombreDelProducto(nombreProducto);
+		publicacion.setPrecio(precio);
+		publicacion.setEstado(estado);
+		publicacion.setDescripcion(descripcion);
+		publicacion.setUsuario(usuario);
+
+		// solo cambiar imagen si llega una nueva
+		if (imagenPath != null && !imagenPath.isEmpty()) {
+		    publicacion.setImagen(imagenPath);
+		}
+
+		boolean ok = dao.actualizar(publicacion);
 		if (ok) {
-			// Forward al panel emergente con mensaje de éxito (puedes personalizar el mensaje aquí)
-			System.out.println(">>>> INFO:RegistrarPublicacionController: publicación guardada, mostrando mensaje de éxito");
-			String nombreProdDisplay = (nombreProducto != null && !nombreProducto.trim().isEmpty()) ? nombreProducto : titulo;
-			req.setAttribute("titulo", "Publicación creada");
-			req.setAttribute("mensaje", "La publicación '" + nombreProdDisplay + "' ha sido creada con éxito.");
+			// Forward al panel emergente con mensaje de éxito (personalizable)
+			System.out.println(">>>> INFO:EditarPublicacionController: publicación actualizada, mostrando mensaje de éxito");
+			String nombreProdDisplay = (publicacion.getNombreDelProducto() != null && !publicacion.getNombreDelProducto().trim().isEmpty()) ? publicacion.getNombreDelProducto() : publicacion.getTitulo();
+			req.setAttribute("titulo", "Publicación actualizada");
+			req.setAttribute("mensaje", "Los cambios en la publicación '" + nombreProdDisplay + "' se han guardado correctamente.");
 			req.setAttribute("urlCancelar", req.getContextPath() + "/VisualizarCatalogoController?ruta=cargar");
 			RequestDispatcher rd = req.getRequestDispatcher("/vista/PanelMensajeEmergente.jsp");
 			rd.forward(req, resp);
  		} else {
-			// En caso de error, reenviar al formulario con un mensaje
-			req.setAttribute("error", "No se pudo guardar la publicación");
-			RequestDispatcher rd = req.getRequestDispatcher("/vista/PanelRegistrarPublicacion.jsp");
-			rd.forward(req, resp);
-		}
- 		
- 	}
-	public void crearPublicacion(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+ 			// En caso de error, reenviar al formulario con un mensaje
+ 			req.setAttribute("error", "No se pudo guardar la publicación");
+ 			RequestDispatcher rd = req.getRequestDispatcher("/vista/PanelRegistrarPublicacion.jsp");
+ 			rd.forward(req, resp);
+ 		}
+		
+	}
+	public void editarPublicacion(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		int idPublicacion = Integer.parseInt(req.getParameter("id"));
+		PublicacionDAO publicacionDAO = new PublicacionDAO();
+		Publicacion publicacion = publicacionDAO.buscarPorId(idPublicacion);
+		req.setAttribute("publicacion", publicacion);
+		req.setAttribute("modo", "editar");
 		// Reenviar a la vista PanelCatalogo.jsp para obtener el formulario de creación
 		RequestDispatcher rd = req.getRequestDispatcher("/vista/PanelRegistrarPublicacion.jsp");
 		rd.forward(req, resp);
 	}
-
+	
 }

@@ -2,7 +2,11 @@
 <persistence version="3.0" xmlns="https://jakarta.ee/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
 	<persistence-unit name="persistencia" transaction-type="RESOURCE_LOCAL">
 		<provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
-		<!-- Entities are discovered via annotations (Jakarta Persistence 3.0) -->
+		<!-- List entity classes first (schema requires <class> before <exclude-unlisted-classes>) -->
+		<class>modelo.entidad.Publicacion</class>
+		<class>modelo.entidad.Mensaje</class>
+		<class>modelo.entidad.Estado</class>
+		<exclude-unlisted-classes>false</exclude-unlisted-classes>
 		<properties>
 			<!-- Si la base no existe, crearla: createDatabaseIfNotExist=true; ajustar serverTimezone si es necesario -->
 			<property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/marketflow?createDatabaseIfNotExist=true&amp;serverTimezone=UTC"/>
